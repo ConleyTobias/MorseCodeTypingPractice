@@ -70,6 +70,7 @@ static MORSE: LazyLock<HashMap<&'static str, &'static str>> = LazyLock::new(|| {
         ])
     });
 
+/// `main()` handles the menu selection, starting a new Morse code typing test or exiting the program
 fn main() {
     // Variables
     let starting_words: u8 = 50;
@@ -97,13 +98,17 @@ fn main() {
 
     // Handle menus
     if selection == "Start" {
-        start(starting_words);
+        test(starting_words);
     } else {
         return;
     }
 }
 
-fn start(starting_words: u8) {
+/// `test()` creates a new typing test
+///
+/// # Arguments
+/// `starting_words` - the number of words in the typing test
+fn test(starting_words: u8) {
     let line: String = "-----------------".to_string();
     clearscreen::clear().unwrap();
     let test = gen_test(starting_words);
@@ -111,7 +116,9 @@ fn start(starting_words: u8) {
     let start = Instant::now();
 
     while start.elapsed().as_secs() < 60 {
-        // print!("\x1B[2J\x1B[H");
+        input_text = input_text.trim_end().to_string();
+        input_text = replace_keys_with_values(&*input_text, &*MORSE);
+
         clearscreen::clear().unwrap();
         println!("{}", test);
         print!("{}", line);
@@ -121,14 +128,16 @@ fn start(starting_words: u8) {
         io::stdout().flush().unwrap(); // Ignore previous output
 
         io::stdin().read_line(&mut input_text).unwrap();
-        input_text = input_text.trim_end().to_string();
-        input_text = replace_keys_with_values(&*input_text, &*MORSE);
     }
 
     clearscreen::clear().unwrap();
     main();
 }
 
+/// This function looks through a given string and finds keys in a HashMap to be replaced with their values
+///
+/// # Example
+/// Given a Morse Code HashMap, a string would change from "ab-.-." to "abc"
 fn replace_keys_with_values(input: &str, replacements: &HashMap<&str, &str>) -> String {
     let mut pairs: Vec<(&str, &str)> = replacements.iter().map(|(k, v)| (*k, *v)).collect();
     pairs.sort_by_key(|(k, _)| std::cmp::Reverse(k.len()));
@@ -139,6 +148,8 @@ fn replace_keys_with_values(input: &str, replacements: &HashMap<&str, &str>) -> 
     }
     result
 }
+
+/// This function generates a string full of spaces and random words using the function `rand_word()`
 fn gen_test(words: u8) -> String {
     let mut string: String = String::new();
 
@@ -151,6 +162,7 @@ fn gen_test(words: u8) -> String {
     string
 }
 
+/// This function generates a single random word using an instance of an `rng`
 fn rand_word(rng: &mut impl RngExt) -> String {
     top_english_words::get_word(rng.random_range(0..100)).unwrap()
 }
